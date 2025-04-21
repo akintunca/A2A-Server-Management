@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastAPI Service</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 900px;
+            padding: 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #60a5fa, #a855f7, #f43f5e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: gradientShift 8s ease infinite;
+            background-size: 300% 300%;
+        }
+
+        h2 {
+            margin-bottom: 1rem;
+        }
+
+        p {
+            font-size: 1.2rem;
+            line-height: 1.7;
+            margin-bottom: 2rem;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 1s ease forwards 0.5s;
+        }
+
+        .endpoints {
+            background-color: rgba(30, 41, 59, 0.7);
+            border-radius: 12px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            margin-top: 2rem;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 1s ease forwards 1s;
+            text-align: left;
+            border-left: 4px solid #4f46e5;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .endpoint {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .method {
+            display: inline-block;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+            font-weight: bold;
+            border-radius: 4px;
+            margin-right: 1rem;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .get {
+            background-color: #4ade80;
+            color: #064e3b;
+        }
+
+        .post {
+            background-color: #60a5fa;
+            color: #1e3a8a;
+        }
+
+        .put {
+            background-color: #f59e0b;
+            color: #78350f;
+        }
+
+        .delete {
+            background-color: #ef4444;
+            color: #7f1d1d;
+        }
+
+        .patch {
+            background-color: #a855f7;
+            color: #581c87;
+        }
+
+        .options {
+            background-color: #94a3b8;
+            color: #334155;
+        }
+
+        .head {
+            background-color: #94a3b8;
+            color: #334155;
+        }
+
+        .path {
+            font-family: monospace;
+            font-size: 1rem;
+        }
+
+        .api-data {
+            background-color: rgba(30, 41, 59, 0.7);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            overflow: auto;
+            width: 100%;
+            font-family: monospace;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards 1.5s;
+            text-align: left;
+            border-left: 4px solid #f59e0b;
+            max-height: 300px;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        button {
+            background: linear-gradient(45deg, #4f46e5, #9333ea);
+            border: none;
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 1s ease forwards 1.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(79, 70, 229, 0.4);
+        }
+
+        button.redoc {
+            background: linear-gradient(45deg, #f43f5e, #e11d48);
+        }
+
+        /* Particles background */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            50% {
+                transform: translate(0, -20px);
+            }
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* API docs design */
+        .docs-link {
+            color: #a5b4fc;
+            text-decoration: none;
+            border-bottom: 1px dashed #a5b4fc;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .docs-link:hover {
+            color: #818cf8;
+            border-color: #818cf8;
+        }
+
+        /* Data pulse animation */
+        .data-pulse {
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+            background-size: 200% 200%;
+            animation: pulse 2s linear infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            100% {
+                background-position: 100% 50%;
+            }
+        }
+
+        .status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background-color: #4ade80;
+            border-radius: 50%;
+            margin-right: 8px;
+            position: relative;
+        }
+
+        .status::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: #4ade80;
+            animation: pulse-status 1.5s ease-out infinite;
+        }
+
+        @keyframes pulse-status {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(2.5);
+                opacity: 0;
+            }
+        }
+
+        .header {
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards 0.2s;
+        }
+
+        .logo {
+            font-size: 2rem;
+            position: relative;
+            width: 50px;
+            height: 50px;
+            margin-right: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo::before {
+            content: '{';
+            color: #4f46e5;
+            position: absolute;
+            left: 0;
+            animation: rotateLeft 4s ease-in-out infinite;
+        }
+
+        .logo::after {
+            content: '}';
+            color: #4f46e5;
+            position: absolute;
+            right: 0;
+            animation: rotateRight 4s ease-in-out infinite;
+        }
+
+        @keyframes rotateLeft {
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            50% {
+                transform: rotate(-20deg);
+            }
+        }
+
+        @keyframes rotateRight {
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            50% {
+                transform: rotate(20deg);
+            }
+        }
+
+        .glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(79, 70, 229, 0.2) 0%, rgba(15, 23, 42, 0) 70%);
+            z-index: 0;
+            border-radius: 50%;
+            animation: glow 10s ease infinite;
+            pointer-events: none;
+        }
+
+        @keyframes glow {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.2;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.3;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .tag {
+            display: inline-block;
+            background-color: rgba(79, 70, 229, 0.2);
+            border-radius: 4px;
+            padding: 2px 6px;
+            margin-left: 8px;
+            font-size: 0.8rem;
+        }
+
+        .api-info {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .info-box {
+            background-color: rgba(30, 41, 59, 0.5);
+            border-radius: 8px;
+            padding: 1rem;
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-box h3 {
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .info-box p {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .title-version {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .version {
+            background-color: rgba(79, 70, 229, 0.2);
+            border-radius: 20px;
+            padding: 0.2rem 0.8rem;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .description {
+            font-style: italic;
+            opacity: 0.8;
+            margin-bottom: 2rem;
+        }
+
+        /* Star particles with CSS */
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            box-shadow: 0 0 5px 1px rgba(255, 255, 255, 0.5);
+            opacity: 0.5;
+            pointer-events: none;
+            animation: twinkle 5s infinite;
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                opacity: 0.2;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Pre-rendered stars -->
+    <div class="particles" id="particles">
+        <div class="star" style="width: 3px; height: 3px; left: 10%; top: 15%; animation-delay: 0s;"></div>
+        <div class="star" style="width: 2px; height: 2px; left: 25%; top: 35%; animation-delay: 1s;"></div>
+        <div class="star" style="width: 4px; height: 4px; left: 40%; top: 20%; animation-delay: 0.5s;"></div>
+        <div class="star" style="width: 2px; height: 2px; left: 60%; top: 40%; animation-delay: 1.5s;"></div>
+        <div class="star" style="width: 3px; height: 3px; left: 75%; top: 30%; animation-delay: 0.8s;"></div>
+        <div class="star" style="width: 2px; height: 2px; left: 85%; top: 15%; animation-delay: 1.2s;"></div>
+        <div class="star" style="width: 4px; height: 4px; left: 15%; top: 70%; animation-delay: 0.3s;"></div>
+        <div class="star" style="width: 3px; height: 3px; left: 35%; top: 80%; animation-delay: 0.7s;"></div>
+        <div class="star" style="width: 2px; height: 2px; left: 55%; top: 65%; animation-delay: 1.3s;"></div>
+        <div class="star" style="width: 4px; height: 4px; left: 80%; top: 75%; animation-delay: 0.2s;"></div>
+        <div class="star" style="width: 3px; height: 3px; left: 90%; top: 85%; animation-delay: 1.1s;"></div>
+        <div class="star" style="width: 2px; height: 2px; left: 20%; top: 25%; animation-delay: 0.9s;"></div>
+        <div class="star" style="width: 4px; height: 4px; left: 45%; top: 55%; animation-delay: 0.6s;"></div>
+        <div class="star" style="width: 3px; height: 3px; left: 65%; top: 10%; animation-delay: 1.4s;"></div>
+        <div class="star" style="width: 2px; height: 2px; left: 70%; top: 50%; animation-delay: 0.4s;"></div>
+        <!-- Add more static stars as needed -->
+    </div>
+    <div class="glow"></div>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo"></div>
+            <div>
+                <span class="status"></span>
+                <span>API Online</span>
+            </div>
+        </div>
+
+        <div class="title-version">
+            <h1 id="api-title">FastAPI Service</h1>
+            <span class="version" id="api-version">v1.0.0</span>
+        </div>
+
+        <p class="description" id="api-description">
+            Loading API description...
+        </p>
+
+        <div class="api-info">
+            <div class="info-box">
+                <h3>ENDPOINTS</h3>
+                <p id="endpoints-count">-</p>
+            </div>
+            <div class="info-box">
+                <h3>TAGS</h3>
+                <p id="tags-count">-</p>
+            </div>
+            <div class="info-box">
+                <h3>MODELS</h3>
+                <p id="models-count">-</p>
+            </div>
+        </div>
+
+        <div class="endpoints">
+            <h2>API Endpoints <span id="loading-endpoints" class="loading"></span></h2>
+            <div id="endpoints-list">
+                <!-- Endpoints will be populated dynamically -->
+            </div>
+            <div class="data-pulse"></div>
+        </div>
+
+        <div class="api-data">
+            <h2>API Schema</h2>
+            <pre id="response-data">Loading OpenAPI schema...</pre>
+        </div>
+
+        <div class="buttons">
+            <button id="swagger-btn" onclick="window.location.href='/docs'">Swagger UI</button>
+            <button id="redoc-btn" class="redoc" onclick="window.location.href='/redoc'">ReDoc</button>
+        </div>
+    </div>
+
+    <script>
+        // Create additional particles after the document loads
+        document.addEventListener('DOMContentLoaded', function () {
+            const particlesContainer = document.getElementById('particles');
+
+            // Make sure the particles container exists
+            if (!particlesContainer) {
+                console.error('Particles container not found');
+                return;
+            }
+
+            // Create particles with multiple attempts
+            function createAllParticles() {
+                try {
+                    // Check if we've already added dynamic particles
+                    if (window.particlesCreated) {
+                        return;
+                    }
+
+                    const numParticles = 50; // Reduced number since we have static stars
+
+                    for (let i = 0; i < numParticles; i++) {
+                        createParticle();
+                    }
+
+                    window.particlesCreated = true;
+                    console.log('Dynamic particles created successfully');
+                } catch (error) {
+                    console.error('Error creating particles:', error);
+                }
+            }
+
+            function createParticle() {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+
+                // Random size between 2-4px
+                const size = Math.random() * 2 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+
+                // Random position
+                const left = Math.random() * 100;
+                const top = Math.random() * 100;
+                particle.style.left = `${left}%`;
+                particle.style.top = `${top}%`;
+
+                // Random opacity
+                particle.style.opacity = Math.random() * 0.5 + 0.1;
+
+                // Animation with direct transform property
+                const duration = Math.random() * 20 + 10;
+                const delay = Math.random() * 5;
+                particle.style.transition = `transform ${duration}s ease-in-out`;
+                particle.style.animation = `float ${duration}s ease-in-out infinite`;
+                particle.style.animationDelay = `${delay}s`;
+
+                particlesContainer.appendChild(particle);
+            }
+
+            // Try to create particles after a slight delay to ensure DOM is ready
+            setTimeout(createAllParticles, 500);
+
+            // Try again after a longer delay as a backup
+            setTimeout(createAllParticles, 2000);
+
+            // Add mouse follower effect for the glow
+            const glow = document.querySelector('.glow');
+            if (glow) {
+                // Set initial position to center
+                glow.style.left = '50%';
+                glow.style.top = '50%';
+                glow.style.transform = 'translate(-50%, -50%)';
+
+                // Add mouse follower with requestAnimationFrame for smoother performance
+                let mouseX = window.innerWidth / 2;
+                let mouseY = window.innerHeight / 2;
+                let currentX = mouseX;
+                let currentY = mouseY;
+
+                document.addEventListener('mousemove', function (e) {
+                    mouseX = e.clientX;
+                    mouseY = e.clientY;
+                });
+
+                function animateGlow() {
+                    // Smooth follow with easing
+                    currentX += (mouseX - currentX) * 0.1;
+                    currentY += (mouseY - currentY) * 0.1;
+
+                    if (glow) {
+                        glow.style.left = `${currentX}px`;
+                        glow.style.top = `${currentY}px`;
+                        glow.style.transform = 'translate(-50%, -50%)';
+                    }
+
+                    requestAnimationFrame(animateGlow);
+                }
+
+                // Start animation
+                animateGlow();
+            }
+
+            // Fetch OpenAPI schema
+            fetchOpenAPISchema();
+        });
+
+        // Function to fetch OpenAPI schema
+        async function fetchOpenAPISchema() {
+            try {
+                const response = await fetch('/openapi.json');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayOpenAPIInfo(data);
+                displayEndpoints(data);
+                displaySchemaPreview(data);
+            } catch (error) {
+                console.error("Error fetching OpenAPI schema:", error);
+                document.getElementById('api-description').textContent =
+                    "Error loading API data. Please ensure the server is running and /openapi.json is accessible.";
+
+                // Hide loading indicators
+                const loadingEndpoints = document.getElementById('loading-endpoints');
+                if (loadingEndpoints) loadingEndpoints.style.display = 'none';
+
+                // Show sample endpoints as fallback
+                displaySampleEndpoints();
+            }
+        }
+
+        function displayOpenAPIInfo(data) {
+            // Set API title
+            if (data.info && data.info.title) {
+                document.getElementById('api-title').textContent = data.info.title;
+            }
+
+            // Set API version
+            if (data.info && data.info.version) {
+                document.getElementById('api-version').textContent = `v${data.info.version}`;
+            }
+
+            // Set API description
+            if (data.info && data.info.description) {
+                document.getElementById('api-description').textContent = data.info.description;
+            } else {
+                document.getElementById('api-description').textContent =
+                    "A powerful FastAPI service providing RESTful endpoints.";
+            }
+
+            // Count endpoints
+            let endpointCount = 0;
+            if (data.paths) {
+                Object.keys(data.paths).forEach(path => {
+                    const methods = Object.keys(data.paths[path]).filter(method =>
+                        ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'].includes(method));
+                    endpointCount += methods.length;
+                });
+            }
+            document.getElementById('endpoints-count').textContent = endpointCount;
+
+            // Count tags
+            const uniqueTags = new Set();
+            if (data.tags) {
+                data.tags.forEach(tag => uniqueTags.add(tag.name));
+            }
+            // Also check for tags in operations
+            if (data.paths) {
+                Object.keys(data.paths).forEach(path => {
+                    const methods = Object.keys(data.paths[path]);
+                    methods.forEach(method => {
+                        const operation = data.paths[path][method];
+                        if (operation.tags) {
+                            operation.tags.forEach(tag => uniqueTags.add(tag));
+                        }
+                    });
+                });
+            }
+            document.getElementById('tags-count').textContent = uniqueTags.size;
+
+            // Count models/schemas
+            let modelCount = 0;
+            if (data.components && data.components.schemas) {
+                modelCount = Object.keys(data.components.schemas).length;
+            }
+            document.getElementById('models-count').textContent = modelCount;
+        }
+
+        function displayEndpoints(data) {
+            const endpointsList = document.getElementById('endpoints-list');
+            endpointsList.innerHTML = '';
+
+            // Hide loading indicator
+            const loadingElement = document.getElementById('loading-endpoints');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+
+            if (data.paths) {
+                const paths = Object.keys(data.paths).sort();
+
+                paths.forEach(path => {
+                    const pathItem = data.paths[path];
+                    const methods = Object.keys(pathItem).filter(method =>
+                        ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'].includes(method)
+                    );
+
+                    methods.forEach(method => {
+                        const operation = pathItem[method];
+                        const endpoint = document.createElement('div');
+                        endpoint.className = 'endpoint';
+
+                        const methodSpan = document.createElement('span');
+                        methodSpan.className = `method ${method}`;
+                        methodSpan.textContent = method.toUpperCase();
+
+                        const pathSpan = document.createElement('span');
+                        pathSpan.className = 'path';
+                        pathSpan.textContent = path;
+
+                        endpoint.appendChild(methodSpan);
+                        endpoint.appendChild(pathSpan);
+
+                        // Add tag if available
+                        if (operation.tags && operation.tags.length > 0) {
+                            const tagSpan = document.createElement('span');
+                            tagSpan.className = 'tag';
+                            tagSpan.textContent = operation.tags[0];
+                            endpoint.appendChild(tagSpan);
+                        }
+
+                        endpointsList.appendChild(endpoint);
+                    });
+                });
+            }
+
+            // If no endpoints found
+            if (endpointsList.children.length === 0) {
+                endpointsList.innerHTML = '<p>No endpoints found in the OpenAPI schema.</p>';
+            }
+        }
+
+        function displaySampleEndpoints() {
+            const endpointsList = document.getElementById('endpoints-list');
+            endpointsList.innerHTML = '';
+
+            // Sample endpoints as fallback
+            const sampleEndpoints = [
+                { method: 'get', path: '/api/items' },
+                { method: 'post', path: '/api/items' },
+                { method: 'get', path: '/api/items/{item_id}' },
+                { method: 'put', path: '/api/items/{item_id}' },
+                { method: 'delete', path: '/api/items/{item_id}' }
+            ];
+
+            sampleEndpoints.forEach(endpoint => {
+                const endpointDiv = document.createElement('div');
+                endpointDiv.className = 'endpoint';
+
+                const methodSpan = document.createElement('span');
+                methodSpan.className = `method ${endpoint.method}`;
+                methodSpan.textContent = endpoint.method.toUpperCase();
+
+                const pathSpan = document.createElement('span');
+                pathSpan.className = 'path';
+                pathSpan.textContent = endpoint.path;
+
+                endpointDiv.appendChild(methodSpan);
+                endpointDiv.appendChild(pathSpan);
+
+                endpointsList.appendChild(endpointDiv);
+            });
+
+            // Update counts with sample data
+            document.getElementById('endpoints-count').textContent = '5';
+            document.getElementById('tags-count').textContent = '1';
+            document.getElementById('models-count').textContent = '2';
+        }
+
+        function displaySchemaPreview(data) {
+            const responseData = document.getElementById('response-data');
+
+            // Format the schema preview to show a simplified version
+            try {
+                const schemaPreview = {
+                    openapi: data.openapi,
+                    info: data.info,
+                    paths: Object.keys(data.paths || {}).reduce((acc, path) => {
+                        acc[path] = '...'; // Just show the path names
+                        return acc;
+                    }, {}),
+                    components: data.components ? {
+                        schemas: data.components.schemas ?
+                            Object.keys(data.components.schemas).reduce((acc, schema) => {
+                                acc[schema] = '...'; // Just show the schema names
+                                return acc;
+                            }, {}) : {}
+                    } : {}
+                };
+
+                // Pretty print the schema
+                responseData.textContent = JSON.stringify(schemaPreview, null, 2);
+
+                // Apply typing effect
+                const originalText = responseData.textContent;
+                responseData.textContent = '';
+                let typingIndex = 0;
+
+                function typeEffect() {
+                    if (typingIndex < originalText.length) {
+                        responseData.textContent += originalText.charAt(typingIndex);
+                        typingIndex++;
+                        // Use a slower speed for smoother typing
+                        setTimeout(typeEffect, 5);
+                    }
+                }
+
+                // Start typing effect after a delay
+                setTimeout(typeEffect, 1500);
+            } catch (error) {
+                console.error("Error displaying schema preview:", error);
+                responseData.textContent = JSON.stringify({
+                    status: "online",
+                    error: "Could not parse OpenAPI schema",
+                    message: "API is working but schema could not be displayed"
+                }, null, 2);
+            }
+        }
+    </script>
+</body>
+
+</html>
